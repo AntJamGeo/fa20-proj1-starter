@@ -25,17 +25,54 @@
 //Make sure that you close the file with fclose before returning.
 Image *readData(char *filename) 
 {
-	//YOUR CODE HERE
+	FILE *f = fopen(filename, "r");
+	if (f == NULL) {
+		printf("Unable to open file %s\n", filename);
+		return NULL;
+	}
+	Image *image = (Image *) malloc(sizeof(Image));
+	char buf[3];
+	fscanf(f, "%s", buf);
+	if (buf[0] != 'P' || buf[1] != '3') {
+		printf("Expected P3 PPM file\n");
+		return NULL;
+	}
+	uint32_t scale;
+	fscanf(f, "%u %u %u", &image->cols, &image->rows, &scale);
+	uint32_t pixels = image->rows * image->cols;
+	image->image = (Color **) malloc(sizeof(Color *) * pixels);
+	for (uint32_t i=0; i < pixels; i++) {
+		*(image->image + i) = (Color *) malloc(sizeof(Color));
+		Color *pixel = *(image->image + i);
+		fscanf(f, "%hhu %hhu %hhu", &pixel->R, &pixel->G, &pixel->B);
+	}
+	fclose(f);
+	return image;
 }
 
 //Given an image, prints to stdout (e.g. with printf) a .ppm P3 file with the image's data.
 void writeData(Image *image)
 {
-	//YOUR CODE HERE
+	printf("P3\n%u %u\n255\n", image->rows, image->cols);
+	Color **p = image->image;
+	for (uint32_t i=0; i < image->rows; i++) {
+		for (uint32_t j=0; j < image->cols-1; j++) {
+			printf("%3hhu %3hhu %3hhu   ", (*p)->R, (*p)->G, (*p)->B);
+			p++;
+		}
+		printf("%3hhu %3hhu %3hhu\n", (*p)->R, (*p)->G, (*p)->B);
+		p++;
+	}
 }
 
 //Frees an image
 void freeImage(Image *image)
 {
-	//YOUR CODE HERE
+	uint32_t pixels = image->rows * image->cols;
+	Color **p = image->image;
+	for (uint32_t i=0; i < pixels; i++) {
+		free(*(p++));
+	}
+	free(image->image);
+	free(image);
 }
