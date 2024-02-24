@@ -103,7 +103,14 @@ You may find it useful to copy the code from steganography.c, to start.
 int main(int argc, char **argv)
 {
 	if (argc != 3) {
-		fprintf(stderr, "\033[31mERROR:\033[0m Wrong number of arguments. Expected a filename and a rule.\n");
+		fprintf(
+			stderr,
+			"\033[31mERROR:\033[0m Wrong number of arguments.\n"
+			"    Usage: %s filename rule\n"
+			"    filename is an ASCII PPM file (type P3) with maximum value 255.\n"
+			"    rule is a hex number beginning with 0x; Life is 0x1808.\n",
+			argv[0]
+		);
 		return -1;
 	}
 	char *filename = argv[1];
