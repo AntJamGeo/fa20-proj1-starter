@@ -23,28 +23,30 @@ Color *rctopx(Image *image, int row, int col) {
 	return pixel;
 }
 
+int mod(int n, int m) {
+	return (n % m + m) % m;
+}
+
 //Determines what color the cell at the given row/col should be. This function allocates space for a new Color.
 //Note that you will need to read the eight neighbors of the cell in question. The grid "wraps", so we treat the top row as adjacent to the bottom row
 //and the left column as adjacent to the right column.
 Color *evaluateOneCell(Image *image, int row, int col, uint32_t rule)
 {
 	Color *original_pixel = rctopx(image, row, col);
-	int8_t row_min = row ? -1 : 0;
-	int8_t row_max = (row+1 == image->rows) ? 0 : 1;
-	int8_t col_min = col ? -1 : 0;
-	int8_t col_max = (col+1 == image->cols) ? 0 : 1;
 	Color *color = (Color *) malloc(sizeof(Color));
 	color->R = color->G = color->B = 0;
+	uint32_t rows = image->rows;
+	uint32_t cols = image->cols;
 	for (uint8_t bit=1; bit; bit <<= 1) {
 		uint8_t rcount = 0;
 		uint8_t gcount = 0;
 		uint8_t bcount = 0;
-		for (int8_t i=row_min; i <= row_max; i++) {
-			for (int8_t j=col_min; j <= col_max; j++) {
-				if (!i && !j) {
+		for (int32_t i=row-1; i <= row+1; i++) {
+			for (int32_t j=col-1; j <= col+1; j++) {
+				if (i == row && j == col) {
 					continue;
 				}
-				Color *pixel = rctopx(image, row+i, col+j);
+				Color *pixel = rctopx(image, mod(i, rows), mod(j, cols));
 				if (pixel->R & bit) {
 					rcount++;
 				}
