@@ -23,35 +23,46 @@ Color *rctopx(Image *image, int row, int col) {
 	return pixel;
 }
 
-uint8_t aliveNeighbors(Image *image, int row, int col) {
-	uint8_t count = 0;
-	int8_t row_min = row ? -1 : 0;
-	int8_t row_max = (row+1 == image->rows) ? 0 : 1;
-	int8_t col_min = col ? -1 : 0;
-	int8_t col_max = (col+1 == image->cols) ? 0 : 1;
-	for (int8_t i=row_min; i <= row_max; i++) {
-		for (int8_t j=col_min; j <= col_max; j++) {
-			if (!i && !j) {
-				continue;
-			}
-			Color *pixel = rctopx(image, row+i, col+j);
-			if (pixel->R) {
-				count++;
-			}
-		}
-	}
-	return count;
-}
-
 //Determines what color the cell at the given row/col should be. This function allocates space for a new Color.
 //Note that you will need to read the eight neighbors of the cell in question. The grid "wraps", so we treat the top row as adjacent to the bottom row
 //and the left column as adjacent to the right column.
 Color *evaluateOneCell(Image *image, int row, int col, uint32_t rule)
 {
-	Color *pixel = rctopx(image, row, col);
-	uint32_t mask = (pixel->R ? 1 << 9 : 1) << aliveNeighbors(image, row, col);
+	Color *original_pixel = rctopx(image, row, col);
+	int8_t row_min = row ? -1 : 0;
+	int8_t row_max = (row+1 == image->rows) ? 0 : 1;
+	int8_t col_min = col ? -1 : 0;
+	int8_t col_max = (col+1 == image->cols) ? 0 : 1;
 	Color *color = (Color *) malloc(sizeof(Color));
-	color->R = color->G = color->B = mask & rule ? 255 : 0;
+	color->R = color->G = color->B = 0;
+	for (uint8_t bit=1; bit; bit <<= 1) {
+		uint8_t rcount = 0;
+		uint8_t gcount = 0;
+		uint8_t bcount = 0;
+		for (int8_t i=row_min; i <= row_max; i++) {
+			for (int8_t j=col_min; j <= col_max; j++) {
+				if (!i && !j) {
+					continue;
+				}
+				Color *pixel = rctopx(image, row+i, col+j);
+				if (pixel->R & bit) {
+					rcount++;
+				}
+				if (pixel->G & bit) {
+					gcount++;
+				}
+				if (pixel->B & bit) {
+					bcount++;
+				}
+			}
+		}
+		uint32_t rmask = (original_pixel->R & bit ? 1 << 9 : 1) << rcount;
+		color->R |= (rmask & rule) ? bit : 0;
+		uint32_t gmask = (original_pixel->G & bit ? 1 << 9 : 1) << gcount;
+		color->G |= (gmask & rule) ? bit : 0;
+		uint32_t bmask = (original_pixel->B & bit ? 1 << 9 : 1) << bcount;
+		color->B |= (bmask & rule) ? bit : 0;
+	}
 	return color;
 }
 
