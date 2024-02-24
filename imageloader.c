@@ -26,20 +26,26 @@
 Image *readData(char *filename) 
 {
 	FILE *f = fopen(filename, "r");
-	if (f == NULL) {
+	if (!f) {
 		printf("Unable to open file %s\n", filename);
 		return NULL;
 	}
-	Image *image = (Image *) malloc(sizeof(Image));
 	char buf[3];
 	fscanf(f, "%s", buf);
 	if (buf[0] != 'P' || buf[1] != '3') {
 		printf("Expected P3 PPM file\n");
 		return NULL;
 	}
-	uint32_t scale;
-	fscanf(f, "%u %u %u", &image->cols, &image->rows, &scale);
-	uint32_t pixels = image->rows * image->cols;
+	uint32_t cols, rows, scale;
+	fscanf(f, "%u %u %u", &cols, &rows, &scale);
+	if (scale != 255) {
+		printf("Scale should be 255\n");
+		return NULL;
+	}
+	Image *image = (Image *) malloc(sizeof(Image));
+	image->cols = cols;
+	image->rows = rows;
+	uint32_t pixels = rows * cols;
 	image->image = (Color **) malloc(sizeof(Color *) * pixels);
 	for (uint32_t i=0; i < pixels; i++) {
 		*(image->image + i) = (Color *) malloc(sizeof(Color));
