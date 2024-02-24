@@ -59,7 +59,7 @@ Image *readData(char *filename)
 //Given an image, prints to stdout (e.g. with printf) a .ppm P3 file with the image's data.
 void writeData(Image *image)
 {
-	printf("P3\n%u %u\n255\n", image->rows, image->cols);
+	printf("P3\n%u %u\n255\n", image->cols, image->rows);
 	Color **p = image->image;
 	for (uint32_t i=0; i < image->rows; i++) {
 		for (uint32_t j=0; j < image->cols-1; j++) {
