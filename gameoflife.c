@@ -17,19 +17,61 @@
 #include <inttypes.h>
 #include "imageloader.h"
 
+Color *rctopx(Image *image, int row, int col) {
+	uint32_t pixel_index = row*image->cols + col;
+	Color *pixel = *(image->image + pixel_index);
+	return pixel;
+}
+
+uint8_t aliveNeighbors(Image *image, int row, int col) {
+	uint8_t count = 0;
+	int8_t row_min = row ? -1 : 0;
+	int8_t row_max = (row+1 == image->rows) ? 0 : 1;
+	int8_t col_min = col ? -1 : 0;
+	int8_t col_max = (col+1 == image->cols) ? 0 : 1;
+	for (int8_t i=row_min; i <= row_max; i++) {
+		for (int8_t j=col_min; j <= col_max; j++) {
+			if (!i && !j) {
+				continue;
+			}
+			Color *pixel = rctopx(image, row+i, col+j);
+			if (pixel->R) {
+				count++;
+			}
+		}
+	}
+	return count;
+}
+
 //Determines what color the cell at the given row/col should be. This function allocates space for a new Color.
 //Note that you will need to read the eight neighbors of the cell in question. The grid "wraps", so we treat the top row as adjacent to the bottom row
 //and the left column as adjacent to the right column.
 Color *evaluateOneCell(Image *image, int row, int col, uint32_t rule)
 {
-	//YOUR CODE HERE
+	Color *pixel = rctopx(image, row, col);
+	uint32_t mask = (pixel->R ? 1 << 9 : 1) << aliveNeighbors(image, row, col);
+	Color *color = (Color *) malloc(sizeof(Color));
+	color->R = color->G = color->B = mask & rule ? 255 : 0;
+	return color;
 }
 
 //The main body of Life; given an image and a rule, computes one iteration of the Game of Life.
 //You should be able to copy most of this from steganography.c
 Image *life(Image *image, uint32_t rule)
 {
-	//YOUR CODE HERE
+	Image *new_image = (Image *) malloc(sizeof(Image));
+	uint32_t pixels = image->rows * image->cols;
+	new_image->image = (Color **) malloc(sizeof(Color *) * pixels);
+	new_image->rows = image->rows;
+	new_image->cols = image->cols;
+	Color **p = new_image->image;
+	for (uint32_t i=0; i < image->rows; i++) {
+		for (uint32_t j=0; j < image->cols; j++) {
+			*p = evaluateOneCell(image, i, j, rule);
+			p++;
+		}
+	}
+	return new_image;
 }
 
 /*
@@ -49,5 +91,15 @@ You may find it useful to copy the code from steganography.c, to start.
 */
 int main(int argc, char **argv)
 {
-	//YOUR CODE HERE
+	if (argc != 3) {
+		fprintf(stderr, "\033[31mERROR:\033[0m Wrong number of arguments. Expected a filename and a rule.\n");
+		return -1;
+	}
+	char *filename = argv[1];
+	uint32_t rule = strtoul(argv[2], NULL, 16);
+	Image *image = readData(filename);
+	Image *new_image = life(image, rule);
+	writeData(new_image);
+	freeImage(new_image);
+	freeImage(image);
 }
